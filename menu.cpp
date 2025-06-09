@@ -122,8 +122,9 @@ void Menu::handleQueryStats() {
         std::cin >> statChoice;
         if (statChoice == 0) break;
         if (statChoice == 1) {
-            // 统计每个卡号总消费
+            // 统计每个卡号总消费，详细列出每笔消费
             std::ifstream recordFile("records.csv");
+            std::map<int, std::vector<std::tuple<std::string, std::string, double>>> records;
             std::map<int, double> totalFee;
             std::string line;
             while (std::getline(recordFile, line)) {
@@ -135,19 +136,26 @@ void Menu::handleQueryStats() {
                 std::getline(iss, feeStr, ',');
                 int id = std::stoi(idStr);
                 double fee = std::stod(feeStr);
+                records[id].emplace_back(startStr, endStr, fee);
                 totalFee[id] += fee;
             }
             recordFile.close();
-            for (const auto& [id, fee] : totalFee) {
-                std::cout << "卡号: " << id << " 总消费: " << std::fixed << std::setprecision(2) << fee << " 元" << std::endl;
+            for (const auto& [id, recs] : records) {
+                std::cout << "卡号: " << id << std::endl;
+                for (const auto& [start, end, fee] : recs) {
+                    std::cout << "  上机时间: " << start << "  下机时间: " << end << "  消费: " << std::fixed << std::setprecision(2) << fee << " 元" << std::endl;
+                }
+                std::cout << "  总消费: " << std::fixed << std::setprecision(2) << totalFee[id] << " 元" << std::endl;
             }
         } else if (statChoice == 2) {
-            // 统计某一天总消费
+            // 统计某一天总消费，详细列出当天每个卡号的消费
             std::string date;
             std::cout << "请输入日期(格式:YYYY-MM-DD)：";
             std::cin >> date;
             std::ifstream recordFile("records.csv");
-            double total = 0;
+            std::map<int, std::vector<std::tuple<std::string, std::string, double>>> records;
+            std::map<int, double> totalFee;
+            double dayTotal = 0;
             std::string line;
             while (std::getline(recordFile, line)) {
                 std::istringstream iss(line);
@@ -157,14 +165,26 @@ void Menu::handleQueryStats() {
                 std::getline(iss, endStr, ',');
                 std::getline(iss, feeStr, ',');
                 if (endStr.substr(0, 10) == date) {
-                    total += std::stod(feeStr);
+                    int id = std::stoi(idStr);
+                    double fee = std::stod(feeStr);
+                    records[id].emplace_back(startStr, endStr, fee);
+                    totalFee[id] += fee;
+                    dayTotal += fee;
                 }
             }
             recordFile.close();
-            std::cout << date << " 总消费: " << std::fixed << std::setprecision(2) << total << " 元" << std::endl;
+            for (const auto& [id, recs] : records) {
+                std::cout << "卡号: " << id << std::endl;
+                for (const auto& [start, end, fee] : recs) {
+                    std::cout << "  上机时间: " << start << "  下机时间: " << end << "  消费: " << std::fixed << std::setprecision(2) << fee << " 元" << std::endl;
+                }
+                std::cout << "  当天总消费: " << std::fixed << std::setprecision(2) << totalFee[id] << " 元" << std::endl;
+            }
+            std::cout << date << " 总消费: " << std::fixed << std::setprecision(2) << dayTotal << " 元" << std::endl;
         } else if (statChoice == 3) {
-            // 统计每个卡号充值金额
+            // 统计每个卡号充值金额，详细列出每笔充值
             std::ifstream rechargeFile("recharge.csv");
+            std::map<int, std::vector<std::pair<std::string, double>>> records;
             std::map<int, double> totalRecharge;
             std::string line;
             while (std::getline(rechargeFile, line)) {
@@ -175,15 +195,21 @@ void Menu::handleQueryStats() {
                 std::getline(iss, amountStr, ',');
                 int id = std::stoi(idStr);
                 double amount = std::stod(amountStr);
+                records[id].emplace_back(timeStr, amount);
                 totalRecharge[id] += amount;
             }
             rechargeFile.close();
-            for (const auto& [id, amount] : totalRecharge) {
-                std::cout << "卡号: " << id << " 总充值: " << std::fixed << std::setprecision(2) << amount << " 元" << std::endl;
+            for (const auto& [id, recs] : records) {
+                std::cout << "卡号: " << id << std::endl;
+                for (const auto& [time, amount] : recs) {
+                    std::cout << "  充值时间: " << time << "  金额: " << std::fixed << std::setprecision(2) << amount << " 元" << std::endl;
+                }
+                std::cout << "  总充值: " << std::fixed << std::setprecision(2) << totalRecharge[id] << " 元" << std::endl;
             }
         } else if (statChoice == 4) {
-            // 统计每个卡号退款金额
+            // 统计每个卡号退款金额，详细列出每笔退款
             std::ifstream refundFile("refund.csv");
+            std::map<int, std::vector<std::pair<std::string, double>>> records;
             std::map<int, double> totalRefund;
             std::string line;
             while (std::getline(refundFile, line)) {
@@ -194,19 +220,26 @@ void Menu::handleQueryStats() {
                 std::getline(iss, amountStr, ',');
                 int id = std::stoi(idStr);
                 double amount = std::stod(amountStr);
+                records[id].emplace_back(timeStr, amount);
                 totalRefund[id] += amount;
             }
             refundFile.close();
-            for (const auto& [id, amount] : totalRefund) {
-                std::cout << "卡号: " << id << " 总退款: " << std::fixed << std::setprecision(2) << amount << " 元" << std::endl;
+            for (const auto& [id, recs] : records) {
+                std::cout << "卡号: " << id << std::endl;
+                for (const auto& [time, amount] : recs) {
+                    std::cout << "  退款时间: " << time << "  金额: " << std::fixed << std::setprecision(2) << amount << " 元" << std::endl;
+                }
+                std::cout << "  总退款: " << std::fixed << std::setprecision(2) << totalRefund[id] << " 元" << std::endl;
             }
         } else if (statChoice == 5) {
-            // 统计某一天充值金额
+            // 统计某一天充值金额，详细列出当天每个卡号的充值
             std::string date;
             std::cout << "请输入日期(格式:YYYY-MM-DD)：";
             std::cin >> date;
             std::ifstream rechargeFile("recharge.csv");
-            double total = 0;
+            std::map<int, std::vector<std::pair<std::string, double>>> records;
+            std::map<int, double> totalRecharge;
+            double dayTotal = 0;
             std::string line;
             while (std::getline(rechargeFile, line)) {
                 std::istringstream iss(line);
@@ -215,18 +248,31 @@ void Menu::handleQueryStats() {
                 std::getline(iss, timeStr, ',');
                 std::getline(iss, amountStr, ',');
                 if (timeStr.substr(0, 10) == date) {
-                    total += std::stod(amountStr);
+                    int id = std::stoi(idStr);
+                    double amount = std::stod(amountStr);
+                    records[id].emplace_back(timeStr, amount);
+                    totalRecharge[id] += amount;
+                    dayTotal += amount;
                 }
             }
             rechargeFile.close();
-            std::cout << date << " 总充值: " << std::fixed << std::setprecision(2) << total << " 元" << std::endl;
+            for (const auto& [id, recs] : records) {
+                std::cout << "卡号: " << id << std::endl;
+                for (const auto& [time, amount] : recs) {
+                    std::cout << "  充值时间: " << time << "  金额: " << std::fixed << std::setprecision(2) << amount << " 元" << std::endl;
+                }
+                std::cout << "  当天总充值: " << std::fixed << std::setprecision(2) << totalRecharge[id] << " 元" << std::endl;
+            }
+            std::cout << date << " 总充值: " << std::fixed << std::setprecision(2) << dayTotal << " 元" << std::endl;
         } else if (statChoice == 6) {
-            // 统计某一天退款金额
+            // 统计某一天退款金额，详细列出当天每个卡号的退款
             std::string date;
             std::cout << "请输入日期(格式:YYYY-MM-DD)：";
             std::cin >> date;
             std::ifstream refundFile("refund.csv");
-            double total = 0;
+            std::map<int, std::vector<std::pair<std::string, double>>> records;
+            std::map<int, double> totalRefund;
+            double dayTotal = 0;
             std::string line;
             while (std::getline(refundFile, line)) {
                 std::istringstream iss(line);
@@ -235,11 +281,22 @@ void Menu::handleQueryStats() {
                 std::getline(iss, timeStr, ',');
                 std::getline(iss, amountStr, ',');
                 if (timeStr.substr(0, 10) == date) {
-                    total += std::stod(amountStr);
+                    int id = std::stoi(idStr);
+                    double amount = std::stod(amountStr);
+                    records[id].emplace_back(timeStr, amount);
+                    totalRefund[id] += amount;
+                    dayTotal += amount;
                 }
             }
             refundFile.close();
-            std::cout << date << " 总退款: " << std::fixed << std::setprecision(2) << total << " 元" << std::endl;
+            for (const auto& [id, recs] : records) {
+                std::cout << "卡号: " << id << std::endl;
+                for (const auto& [time, amount] : recs) {
+                    std::cout << "  退款时间: " << time << "  金额: " << std::fixed << std::setprecision(2) << amount << " 元" << std::endl;
+                }
+                std::cout << "  当天总退款: " << std::fixed << std::setprecision(2) << totalRefund[id] << " 元" << std::endl;
+            }
+            std::cout << date << " 总退款: " << std::fixed << std::setprecision(2) << dayTotal << " 元" << std::endl;
         } else {
             std::cout << "无效的统计选项。" << std::endl;
         }
